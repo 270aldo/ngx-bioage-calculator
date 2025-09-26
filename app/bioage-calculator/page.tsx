@@ -14,6 +14,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Slider } from "@/components/ui/slider"
+import { Toggle } from "@/components/ui/toggle"
+import { Switch } from "@/components/ui/switch"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { NeonCard } from "@/components/neon-card"
+import { StepperInput } from "@/components/stepper-input"
 import { calculateBioAge, type BioAgeInput, type BioAgeResult } from "@/lib/bioage"
 import { z } from "zod"
 import { Loader2, Sparkles, Activity, HeartPulse, Gauge, Zap } from "lucide-react"
@@ -31,6 +38,38 @@ export default function BioAgeCalculatorPage() {
   const [results, setResults] = useState<(BioAgeResult & BioAgeInput) | null>(null)
   const [email, setEmail] = useState("")
   const [unlocked, setUnlocked] = useState(false)
+
+  // Input mode & auto-calc
+  const [mode, setMode] = useState<"form" | "sliders" | "quick">("form")
+  const [autoCalc, setAutoCalc] = useState(false)
+
+  // Auto-cálculo con debounce
+  React.useEffect(() => {
+    if (!autoCalc) return
+    const requiredOk = chronoAge !== "" && height !== "" && weight !== "" && sex !== "" && sleepHours !== "" && sleepQuality !== "" && activityLevel !== "" && stressLevel !== "" && dietQuality !== ""
+    if (!requiredOk) return
+    const t = setTimeout(() => {
+      const payload: BioAgeInput = {
+        chronoAge: Number(chronoAge),
+        sex: (sex || "male") as any,
+        height: Number(height),
+        weight: Number(weight),
+        sleepHours: Number(sleepHours),
+        sleepQuality: sleepQuality as any,
+        hrv: toNumber(hrv),
+        vo2max: toNumber(vo2max),
+        gripStrength: toNumber(gripStrength),
+        walkSpeed: toNumber(walkSpeed),
+        activityLevel: activityLevel as any,
+        stressLevel: stressLevel as any,
+        dietQuality: dietQuality as any,
+      }
+      const r = calculateBioAge(payload)
+      setResults({ ...r, ...payload })
+      setSection(5)
+    }, 250)
+    return () => clearTimeout(t)
+  }, [autoCalc, chronoAge, sex, height, weight, sleepHours, sleepQuality, hrv, vo2max, gripStrength, walkSpeed, activityLevel, stressLevel, dietQuality])
 
   // Inputs state
   const [chronoAge, setChronoAge] = useState<number | "">("")
@@ -139,19 +178,35 @@ export default function BioAgeCalculatorPage() {
         <CardContent className="p-6 sm:p-8">
           {/* Logo / Title */}
           <div className="text-center mb-8">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-xl border border-primary/40 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.25)]">
-              <Sparkles className="h-6 w-6 text-primary" />
+            <div className="mx-auto mb-4 h-12 w-12 rounded-xl border border-[var(--primary)] flex items-center justify-center shadow-[var(--neon-shadow-soft)]">
+              <Sparkles className="h-6 w-6 text-[var(--primary)]" />
             </div>
-            <div className="text-2xl font-extrabold bg-gradient-to-br from-primary to-[var(--primary-glow)] bg-clip-text text-transparent tracking-tight">
+            <div className="text-2xl font-extrabold bg-gradient-to-br from-[var(--primary)] to-[var(--primary-glow)] bg-clip-text text-transparent tracking-tight">
               NGX BioAge Calculator Pro
             </div>
             <div className="text-sm text-[var(--text-muted)] mt-1">Descubre tu edad biológica real con precisión científica</div>
           </div>
 
-          {/* Progress */}
+          {/* Mode + Auto-calc + Progress */}
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+              <TabsList>
+                <TabsTrigger value="form">Formulario</TabsTrigger>
+                <TabsTrigger value="sliders">Sliders</TabsTrigger>
+                <TabsTrigger value="quick">Rápido</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <span>Auto-calcular</span>
+              <Switch checked={autoCalc} onCheckedChange={setAutoCalc} />
+            </div>
+          </div>
+
           {section <= 4 && (
             <div className="mb-8">
-              <Progress value={progress} className="h-1.5" />
+              <div className="h-1.5 w-full rounded-full bg-[#1a1a1a] overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${progress}%`, background: "linear-gradient(90deg, #6D00FF, #8F33FF)", boxShadow: "0 0 20px rgba(109,0,255,0.6)" }} />
+              </div>
             </div>
           )}
 
@@ -164,7 +219,17 @@ export default function BioAgeCalculatorPage() {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="chronoAge">Edad Cronológica</Label>
-                  <Input id="chronoAge" type="number" placeholder="Ej: 45" min={18} max={100} value={chronoAge} onChange={(e) => setChronoAge(e.target.value === "" ? "" : Number(e.target.value))} />
+                  {mode === "form" && (
+                    <Input id="chronoAge" type="number" placeholder="Ej: 45" min={18} max={100} value={chronoAge} onChange={(e) => setChronoAge(e.target.value === "" ? "" : Number(e.target.value))} />
+                  )}
+                  {mode === "sliders" && (
+                    <div className="px-1">
+                      <Slider min={18} max={100} value={[Number(chronoAge || 18)]} onValueChange={(v) => setChronoAge(v[0])} />
+                    </div>
+                  )}
+                  {mode === "quick" && (
+                    <StepperInput id="chronoAge" value={chronoAge} onChange={setChronoAge} min={18} max={100} />
+                  )}
                   <p className="text-xs text-[var(--text-muted)]">Tu edad actual en años</p>
                 </div>
 
@@ -189,11 +254,31 @@ export default function BioAgeCalculatorPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="height">Altura (cm)</Label>
-                    <Input id="height" type="number" placeholder="Ej: 175" min={140} max={220} value={height} onChange={(e) => setHeight(e.target.value === "" ? "" : Number(e.target.value))} />
+                    {mode === "form" && (
+                      <Input id="height" type="number" placeholder="Ej: 175" min={140} max={220} value={height} onChange={(e) => setHeight(e.target.value === "" ? "" : Number(e.target.value))} />
+                    )}
+                    {mode === "sliders" && (
+                      <div className="px-1">
+                        <Slider min={140} max={220} value={[Number(height || 140)]} onValueChange={(v) => setHeight(v[0])} />
+                      </div>
+                    )}
+                    {mode === "quick" && (
+                      <StepperInput id="height" value={height} onChange={setHeight} min={140} max={220} />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="weight">Peso (kg)</Label>
-                    <Input id="weight" type="number" placeholder="Ej: 70" min={40} max={200} value={weight} onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))} />
+                    {mode === "form" && (
+                      <Input id="weight" type="number" placeholder="Ej: 70" min={40} max={200} value={weight} onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))} />
+                    )}
+                    {mode === "sliders" && (
+                      <div className="px-1">
+                        <Slider min={40} max={200} value={[Number(weight || 40)]} onValueChange={(v) => setWeight(v[0])} />
+                      </div>
+                    )}
+                    {mode === "quick" && (
+                      <StepperInput id="weight" value={weight} onChange={setWeight} min={40} max={200} />
+                    )}
                   </div>
                 </div>
 
@@ -201,7 +286,7 @@ export default function BioAgeCalculatorPage() {
                   <Button variant="outline" onClick={() => goTo(1)} disabled>
                     Atrás
                   </Button>
-                  <Button onClick={() => goTo(2)} disabled={!isSection1Valid}>
+                  <Button variant="neon" size="lg" onClick={() => goTo(2)} disabled={!isSection1Valid}>
                     Continuar
                   </Button>
                 </div>
@@ -217,7 +302,17 @@ export default function BioAgeCalculatorPage() {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="sleepHours">Horas de Sueño Promedio</Label>
-                  <Input id="sleepHours" type="number" step="0.5" min={4} max={12} placeholder="Ej: 7.5" value={sleepHours} onChange={(e) => setSleepHours(e.target.value === "" ? "" : Number(e.target.value))} />
+                  {mode === "form" && (
+                    <Input id="sleepHours" type="number" step="0.5" min={4} max={12} placeholder="Ej: 7.5" value={sleepHours} onChange={(e) => setSleepHours(e.target.value === "" ? "" : Number(e.target.value))} />
+                  )}
+                  {mode === "sliders" && (
+                    <div className="px-1">
+                      <Slider min={4} max={12} value={[Number(sleepHours || 4)]} onValueChange={(v) => setSleepHours(v[0])} />
+                    </div>
+                  )}
+                  {mode === "quick" && (
+                    <StepperInput id="sleepHours" value={sleepHours} onChange={setSleepHours} min={4} max={12} />
+                  )}
                   <p className="text-xs text-[var(--text-muted)]">Promedio de las últimas 4 semanas</p>
                 </div>
 
@@ -238,7 +333,17 @@ export default function BioAgeCalculatorPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="hrv">Variabilidad Cardíaca (HRV)</Label>
-                  <Input id="hrv" type="number" placeholder="Ej: 45" min={10} max={150} value={hrv} onChange={(e) => setHrv(e.target.value === "" ? "" : Number(e.target.value))} />
+                  {mode === "form" && (
+                    <Input id="hrv" type="number" placeholder="Ej: 45" min={10} max={150} value={hrv} onChange={(e) => setHrv(e.target.value === "" ? "" : Number(e.target.value))} />
+                  )}
+                  {mode === "sliders" && (
+                    <div className="px-1">
+                      <Slider min={10} max={150} value={[Number(hrv || 10)]} onValueChange={(v) => setHrv(v[0])} />
+                    </div>
+                  )}
+                  {mode === "quick" && (
+                    <StepperInput id="hrv" value={hrv} onChange={setHrv} min={10} max={150} />
+                  )}
                   <p className="text-xs text-[var(--text-muted)]">Promedio en ms (si lo conoces)</p>
                 </div>
 
@@ -246,7 +351,7 @@ export default function BioAgeCalculatorPage() {
                   <Button variant="outline" onClick={() => goTo(1)}>
                     Atrás
                   </Button>
-                  <Button onClick={() => goTo(3)} disabled={!isSection2Valid}>
+                  <Button variant="neon" size="lg" onClick={() => goTo(3)} disabled={!isSection2Valid}>
                     Continuar
                   </Button>
                 </div>
@@ -263,19 +368,49 @@ export default function BioAgeCalculatorPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="vo2">VO2 Max Estimado</Label>
-                    <Input id="vo2" type="number" placeholder="Ej: 42" min={15} max={80} value={vo2max} onChange={(e) => setVo2max(e.target.value === "" ? "" : Number(e.target.value))} />
+                    {mode === "form" && (
+                      <Input id="vo2" type="number" placeholder="Ej: 42" min={15} max={80} value={vo2max} onChange={(e) => setVo2max(e.target.value === "" ? "" : Number(e.target.value))} />
+                    )}
+                    {mode === "sliders" && (
+                      <div className="px-1">
+                        <Slider min={15} max={80} value={[Number(vo2max || 15)]} onValueChange={(v) => setVo2max(v[0])} />
+                      </div>
+                    )}
+                    {mode === "quick" && (
+                      <StepperInput id="vo2" value={vo2max} onChange={setVo2max} min={15} max={80} />
+                    )}
                     <p className="text-xs text-[var(--text-muted)]">ml/kg/min - Puedes estimarlo con una prueba de caminata</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="grip">Fuerza de Agarre (kg)</Label>
-                    <Input id="grip" type="number" placeholder="Ej: 35" min={10} max={100} value={gripStrength} onChange={(e) => setGripStrength(e.target.value === "" ? "" : Number(e.target.value))} />
+                    {mode === "form" && (
+                      <Input id="grip" type="number" placeholder="Ej: 35" min={10} max={100} value={gripStrength} onChange={(e) => setGripStrength(e.target.value === "" ? "" : Number(e.target.value))} />
+                    )}
+                    {mode === "sliders" && (
+                      <div className="px-1">
+                        <Slider min={10} max={100} value={[Number(gripStrength || 10)]} onValueChange={(v) => setGripStrength(v[0])} />
+                      </div>
+                    )}
+                    {mode === "quick" && (
+                      <StepperInput id="grip" value={gripStrength} onChange={setGripStrength} min={10} max={100} />
+                    )}
                     <p className="text-xs text-[var(--text-muted)]">Mano dominante - Indicador clave de longevidad</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="walk">Velocidad de Caminata (m/s)</Label>
-                  <Input id="walk" type="number" step="0.1" min={0.5} max={2.5} placeholder="Ej: 1.2" value={walkSpeed} onChange={(e) => setWalkSpeed(e.target.value === "" ? "" : Number(e.target.value))} />
+                  {mode === "form" && (
+                    <Input id="walk" type="number" step="0.1" min={0.5} max={2.5} placeholder="Ej: 1.2" value={walkSpeed} onChange={(e) => setWalkSpeed(e.target.value === "" ? "" : Number(e.target.value))} />
+                  )}
+                  {mode === "sliders" && (
+                    <div className="px-1">
+                      <Slider min={0.5} max={2.5} value={[Number(walkSpeed || 0.5)]} onValueChange={(v) => setWalkSpeed(v[0])} />
+                    </div>
+                  )}
+                  {mode === "quick" && (
+                    <StepperInput id="walk" value={walkSpeed} onChange={setWalkSpeed} min={0.5 as any} max={2.5 as any} step={0.1 as any} />
+                  )}
                   <p className="text-xs text-[var(--text-muted)]">Velocidad normal caminando 4 metros</p>
                 </div>
 
@@ -283,7 +418,7 @@ export default function BioAgeCalculatorPage() {
                   <Button variant="outline" onClick={() => goTo(2)}>
                     Atrás
                   </Button>
-                  <Button onClick={() => goTo(4)}>
+                  <Button variant="neon" size="lg" onClick={() => goTo(4)}>
                     Continuar
                   </Button>
                 </div>
@@ -347,7 +482,7 @@ export default function BioAgeCalculatorPage() {
                   <Button variant="outline" onClick={() => goTo(3)}>
                     Atrás
                   </Button>
-                  <Button onClick={onCalculate} disabled={loading || !isSection4Valid}>
+                  <Button variant="neon" size="lg" onClick={onCalculate} disabled={loading || !isSection4Valid}>
                     {loading ? (
                       <>
                         Calculando <Loader2 className="ml-2 h-4 w-4 animate-spin" />
@@ -370,7 +505,7 @@ export default function BioAgeCalculatorPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Tu Análisis BioAge NGX</h1>
               </div>
 
-              <div className="relative rounded-3xl border-2 border-primary p-8 mb-8 bg-gradient-to-br from-[var(--surface,#0A0A0A)] to-black/40">
+              <NeonCard className="p-8 mb-8">
                 <div className="uppercase text-xs tracking-widest text-[var(--text-muted)] mb-2">Tu Edad Biológica Real</div>
                 <div className="text-7xl sm:text-8xl font-extrabold bg-gradient-to-b from-white to-neutral-300 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(255,255,255,0.25)]">
                   {results.bioAge}
@@ -400,7 +535,7 @@ export default function BioAgeCalculatorPage() {
                 >
                   {ageDiff < -2 ? "✨ EXCELENTE" : ageDiff <= 2 ? "⚡ BUENO" : "⚠️ ATENCIÓN REQUERIDA"}
                 </div>
-              </div>
+              </NeonCard>
 
               {/* Metrics grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
@@ -412,7 +547,7 @@ export default function BioAgeCalculatorPage() {
 
               {/* Gating */}
               {!unlocked && (
-                <div className="mt-10 p-6 rounded-2xl border bg-secondary/50 text-left">
+                <NeonCard className="mt-10 p-6 text-left">
                   <h3 className="text-lg font-semibold mb-2">Desbloquea recomendaciones personalizadas y proyección a 5 años</h3>
                   <p className="text-sm text-[var(--text-muted)] mb-4">Ingresa tu email para recibir tu plan NGX y mejoras sugeridas basadas en tu análisis.</p>
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -420,9 +555,9 @@ export default function BioAgeCalculatorPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
-                    <Button onClick={unlockWithEmail}>Desbloquear</Button>
+                    <Button variant="neon" onClick={unlockWithEmail}>Desbloquear</Button>
                   </div>
-                </div>
+                </NeonCard>
               )}
 
               {/* Recommendations */}
@@ -481,7 +616,7 @@ export default function BioAgeCalculatorPage() {
                   setVo2max(""); setGripStrength(""); setWalkSpeed("");
                   setActivityLevel(""); setStressLevel(""); setDietQuality("");
                 }}>Nuevo Cálculo</Button>
-                <Button onClick={() => alert("🚀 Accediendo a NGX Premium - Tu transformación biológica comienza aquí")}>Acceder a NGX Premium</Button>
+                <Button variant="neon" size="lg" onClick={() => alert("🚀 Accediendo a NGX Premium - Tu transformación biológica comienza aquí")}>Acceder a NGX Premium</Button>
               </div>
             </div>
           )}
@@ -493,12 +628,12 @@ export default function BioAgeCalculatorPage() {
 
 function MetricCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-[var(--surface,#0A0A0A)] to-[rgba(20,20,20,0.5)] p-5">
-      <div className="absolute inset-x-0 top-0 h-0.5 animate-[scan_3s_linear_infinite] bg-[linear-gradient(90deg,transparent,theme(colors.primary),transparent)]" />
+    <NeonCard className="p-5">
+      <div className="absolute inset-x-0 top-0 h-0.5 animate-[scan_3s_linear_infinite] bg-[linear-gradient(90deg,transparent,var(--primary),transparent)]" />
       <div className="mb-3 text-xs uppercase tracking-wider text-[var(--text-muted)]">{title}</div>
       <div className="mb-2 text-3xl font-bold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent">{value}</div>
       <div className="text-sm text-[var(--text-muted)] flex items-center gap-2">{icon}<span>Estado</span></div>
-    </div>
+    </NeonCard>
   )
 }
 
