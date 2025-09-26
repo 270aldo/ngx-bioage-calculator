@@ -43,10 +43,40 @@ export default function BioAgeCalculatorPage() {
   const [mode, setMode] = useState<"form" | "sliders" | "quick">("form")
   const [autoCalc, setAutoCalc] = useState(false)
 
+
+  // Inputs state
+  const [chronoAge, setChronoAge] = useState<number | "">("")
+  const [sex, setSex] = useState<"male" | "female" | "">("")
+  const [height, setHeight] = useState<number | "">("")
+  const [weight, setWeight] = useState<number | "">("")
+
+  const [sleepHours, setSleepHours] = useState<number | "">("")
+  const [sleepQuality, setSleepQuality] = useState<"excellent" | "good" | "fair" | "poor" | "">("")
+  const [hrv, setHrv] = useState<number | "">("")
+
+  const [vo2max, setVo2max] = useState<number | "">("")
+  const [gripStrength, setGripStrength] = useState<number | "">("")
+  const [walkSpeed, setWalkSpeed] = useState<number | "">("")
+
+  const [activityLevel, setActivityLevel] = useState<
+    "sedentary" | "light" | "moderate" | "active" | "veryActive" | ""
+  >("")
+  const [stressLevel, setStressLevel] = useState<"low" | "moderate" | "high" | "veryHigh" | "">("")
+  const [dietQuality, setDietQuality] = useState<"excellent" | "good" | "fair" | "poor" | "">("")
+
   // Auto-cálculo con debounce
   useEffect(() => {
     if (!autoCalc) return
-    const requiredOk = chronoAge !== "" && height !== "" && weight !== "" && sex !== "" && sleepHours !== "" && sleepQuality !== "" && activityLevel !== "" && stressLevel !== "" && dietQuality !== ""
+    const requiredOk =
+      chronoAge !== "" &&
+      height !== "" &&
+      weight !== "" &&
+      sex !== "" &&
+      sleepHours !== "" &&
+      sleepQuality !== "" &&
+      activityLevel !== "" &&
+      stressLevel !== "" &&
+      dietQuality !== ""
     if (!requiredOk) return
     const t = setTimeout(() => {
       const payload: BioAgeInput = {
@@ -70,26 +100,6 @@ export default function BioAgeCalculatorPage() {
     }, 250)
     return () => clearTimeout(t)
   }, [autoCalc, chronoAge, sex, height, weight, sleepHours, sleepQuality, hrv, vo2max, gripStrength, walkSpeed, activityLevel, stressLevel, dietQuality])
-
-  // Inputs state
-  const [chronoAge, setChronoAge] = useState<number | "">("")
-  const [sex, setSex] = useState<"male" | "female" | "">("")
-  const [height, setHeight] = useState<number | "">("")
-  const [weight, setWeight] = useState<number | "">("")
-
-  const [sleepHours, setSleepHours] = useState<number | "">("")
-  const [sleepQuality, setSleepQuality] = useState<"excellent" | "good" | "fair" | "poor" | "">("")
-  const [hrv, setHrv] = useState<number | "">("")
-
-  const [vo2max, setVo2max] = useState<number | "">("")
-  const [gripStrength, setGripStrength] = useState<number | "">("")
-  const [walkSpeed, setWalkSpeed] = useState<number | "">("")
-
-  const [activityLevel, setActivityLevel] = useState<
-    "sedentary" | "light" | "moderate" | "active" | "veryActive" | ""
-  >("")
-  const [stressLevel, setStressLevel] = useState<"low" | "moderate" | "high" | "veryHigh" | "">("")
-  const [dietQuality, setDietQuality] = useState<"excellent" | "good" | "fair" | "poor" | "">("")
 
   const isSection1Valid = chronoAge !== "" && height !== "" && weight !== "" && sex !== ""
   const isSection2Valid = sleepHours !== "" && sleepQuality !== ""
