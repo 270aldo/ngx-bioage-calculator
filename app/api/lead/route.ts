@@ -5,7 +5,7 @@ import { getDb } from "@/lib/firebaseAdmin"
 const Payload = z.object({
   email: z.string().email(),
   source: z.string().optional(),
-  utm: z.record(z.string()).optional(),
+  utm: z.record(z.string(), z.string()).optional(),
 })
 
 export async function POST(req: Request) {

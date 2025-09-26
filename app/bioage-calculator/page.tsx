@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -16,14 +16,12 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
-import { Toggle } from "@/components/ui/toggle"
-import { Switch } from "@/components/ui/switch"
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { HelpTip } from "@/components/ui/help-tip"
 import { NeonCard } from "@/components/neon-card"
 import { StepperInput } from "@/components/stepper-input"
 import { calculateBioAge, type BioAgeInput, type BioAgeResult } from "@/lib/bioage"
 import { z } from "zod"
-import { Loader2, Sparkles, Activity, HeartPulse, Gauge, Zap, HelpCircle } from "lucide-react"
+import { Loader2, Sparkles, Activity, HeartPulse, Gauge, Zap, Check } from "lucide-react"
 import { track } from "@vercel/analytics"
 
 const emailSchema = z.string().email()
@@ -42,7 +40,6 @@ export default function BioAgeCalculatorPage() {
 
   // Input mode & auto-calc
   const [mode, setMode] = useState<"form" | "sliders" | "quick">("form")
-  const [autoCalc, setAutoCalc] = useState(false)
 
 
   // Inputs state
@@ -65,42 +62,6 @@ export default function BioAgeCalculatorPage() {
   const [stressLevel, setStressLevel] = useState<"low" | "moderate" | "high" | "veryHigh" | "">("")
   const [dietQuality, setDietQuality] = useState<"excellent" | "good" | "fair" | "poor" | "">("")
 
-  // Auto-cálculo con debounce
-  useEffect(() => {
-    if (!autoCalc) return
-    const requiredOk =
-      chronoAge !== "" &&
-      height !== "" &&
-      weight !== "" &&
-      sex !== "" &&
-      sleepHours !== "" &&
-      sleepQuality !== "" &&
-      activityLevel !== "" &&
-      stressLevel !== "" &&
-      dietQuality !== ""
-    if (!requiredOk) return
-    const t = setTimeout(() => {
-      const payload: BioAgeInput = {
-        chronoAge: Number(chronoAge),
-        sex: (sex || "male") as any,
-        height: Number(height),
-        weight: Number(weight),
-        sleepHours: Number(sleepHours),
-        sleepQuality: sleepQuality as any,
-        hrv: toNumber(hrv),
-        vo2max: toNumber(vo2max),
-        gripStrength: toNumber(gripStrength),
-        walkSpeed: toNumber(walkSpeed),
-        activityLevel: activityLevel as any,
-        stressLevel: stressLevel as any,
-        dietQuality: dietQuality as any,
-      }
-      const r = calculateBioAge(payload)
-      setResults({ ...r, ...payload })
-      setSection(5)
-    }, 250)
-    return () => clearTimeout(t)
-  }, [autoCalc, chronoAge, sex, height, weight, sleepHours, sleepQuality, hrv, vo2max, gripStrength, walkSpeed, activityLevel, stressLevel, dietQuality])
 
   const isSection1Valid = chronoAge !== "" && height !== "" && weight !== "" && sex !== ""
   const isSection2Valid = sleepHours !== "" && sleepQuality !== ""
@@ -126,7 +87,7 @@ export default function BioAgeCalculatorPage() {
       return
     }
 
-    try { track("calc_clicked", { auto: autoCalc }) } catch {}
+    try { track("calc_clicked") } catch {}
     setLoading(true)
     setTimeout(() => {
       const payload: BioAgeInput = {
@@ -219,7 +180,7 @@ export default function BioAgeCalculatorPage() {
           </div>
 
           {/* Mode + Auto-calc + Progress */}
-          <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="mb-4 flex items-center justify-center">
             <Tabs value={mode} onValueChange={onModeChange}>
               <TabsList>
                 <TabsTrigger value="form">Formulario</TabsTrigger>
@@ -227,10 +188,6 @@ export default function BioAgeCalculatorPage() {
                 <TabsTrigger value="quick">Rápido</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-              <span>Auto-calcular</span>
-              <Switch checked={autoCalc} onCheckedChange={(v) => { setAutoCalc(!!v); try { track("calc_auto_toggle", { on: !!v }) } catch {} }} />
-            </div>
           </div>
 
           {section <= 4 && (
@@ -250,16 +207,9 @@ export default function BioAgeCalculatorPage() {
               <div className="space-y-6">
 
                 <div className="space-y-2">
-                  <Label htmlFor="chronoAge" className="flex items-center gap-2">Edad Cronológica
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                      </TooltipTrigger>
-                      <TooltipContent>Tu edad en años cumplidos.</TooltipContent>
-                    </Tooltip>
-                  </Label>
+                  <Label htmlFor="chronoAge" className="flex items-center gap-2">Edad Cronológica <HelpTip content="Tu edad en años cumplidos." /></Label>
                   {mode === "form" && (
-                    <Input id="chronoAge" type="number" placeholder="Ej: 45" min={18} max={100} value={chronoAge} onChange={(e) => setChronoAge(e.target.value === "" ? "" : Number(e.target.value))} />
+                    <Input id="chronoAge" type="number" inputMode="numeric" placeholder="Ej: 45" min={18} max={100} value={chronoAge} onChange={(e) => setChronoAge(e.target.value === "" ? "" : Number(e.target.value))} />
                   )}
                   {mode === "sliders" && (
                     <div className="px-1">
@@ -273,14 +223,7 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">Sexo Biológico
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                      </TooltipTrigger>
-                      <TooltipContent>Usado para ajustar VO2max y fuerza esperada.</TooltipContent>
-                    </Tooltip>
-                  </Label>
+                  <Label className="flex items-center gap-2">Sexo Biológico <HelpTip content="Usado para ajustar VO2max y fuerza esperada." /></Label>
                   <RadioGroup value={sex} onValueChange={(v) => setSex(v as any)} className="grid grid-cols-2 gap-3 mt-2">
                     <div>
                       <RadioGroupItem id="male" value="male" className="peer sr-only" />
@@ -299,16 +242,9 @@ export default function BioAgeCalculatorPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="height" className="flex items-center gap-2">Altura (cm)
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                        </TooltipTrigger>
-                        <TooltipContent>Usada para calcular el IMC.</TooltipContent>
-                      </Tooltip>
-                    </Label>
+                    <Label htmlFor="height" className="flex items-center gap-2">Altura (cm) <HelpTip content="Usada para calcular el IMC." /></Label>
                     {mode === "form" && (
-                      <Input id="height" type="number" placeholder="Ej: 175" min={140} max={220} value={height} onChange={(e) => setHeight(e.target.value === "" ? "" : Number(e.target.value))} />
+                    <Input id="height" type="number" inputMode="numeric" placeholder="Ej: 175" min={140} max={220} value={height} onChange={(e) => setHeight(e.target.value === "" ? "" : Number(e.target.value))} />
                     )}
                     {mode === "sliders" && (
                       <div className="px-1">
@@ -320,16 +256,9 @@ export default function BioAgeCalculatorPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="weight" className="flex items-center gap-2">Peso (kg)
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                        </TooltipTrigger>
-                        <TooltipContent>Usado para calcular el IMC.</TooltipContent>
-                      </Tooltip>
-                    </Label>
+                    <Label htmlFor="weight" className="flex items-center gap-2">Peso (kg) <HelpTip content="Usado para calcular el IMC." /></Label>
                     {mode === "form" && (
-                      <Input id="weight" type="number" placeholder="Ej: 70" min={40} max={200} value={weight} onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))} />
+                    <Input id="weight" type="number" inputMode="numeric" placeholder="Ej: 70" min={40} max={200} value={weight} onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))} />
                     )}
                     {mode === "sliders" && (
                       <div className="px-1">
@@ -343,7 +272,7 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Button variant="outline" onClick={() => goTo(1)} disabled>
+                  <Button variant="neon" size="lg" onClick={() => goTo(1)} disabled>
                     Atrás
                   </Button>
                   <Button variant="neon" size="lg" onClick={() => goTo(2)} disabled={!isSection1Valid}>
@@ -361,16 +290,9 @@ export default function BioAgeCalculatorPage() {
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="sleepHours" className="flex items-center gap-2">Horas de Sueño Promedio
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                      </TooltipTrigger>
-                      <TooltipContent>Promedio de las últimas 4 semanas.</TooltipContent>
-                    </Tooltip>
-                  </Label>
+                  <Label htmlFor="sleepHours" className="flex items-center gap-2">Horas de Sueño Promedio <HelpTip content="Promedio de las últimas 4 semanas." /></Label>
                   {mode === "form" && (
-                    <Input id="sleepHours" type="number" step="0.5" min={4} max={12} placeholder="Ej: 7.5" value={sleepHours} onChange={(e) => setSleepHours(e.target.value === "" ? "" : Number(e.target.value))} />
+                    <Input id="sleepHours" type="number" inputMode="decimal" step="0.5" min={4} max={12} placeholder="Ej: 7.5" value={sleepHours} onChange={(e) => setSleepHours(e.target.value === "" ? "" : Number(e.target.value))} />
                   )}
                   {mode === "sliders" && (
                     <div className="px-1">
@@ -385,25 +307,42 @@ export default function BioAgeCalculatorPage() {
 
                 <div className="space-y-2">
                   <Label>Calidad del Sueño</Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Chip label="Excelente" active={sleepQuality === "excellent"} onClick={() => setSleepQuality("excellent")} />
-                    <Chip label="Bueno" active={sleepQuality === "good"} onClick={() => setSleepQuality("good")} />
-                    <Chip label="Regular" active={sleepQuality === "fair"} onClick={() => setSleepQuality("fair")} />
-                    <Chip label="Pobre" active={sleepQuality === "poor"} onClick={() => setSleepQuality("poor")} />
-                  </div>
+                  <RadioGroup value={sleepQuality} onValueChange={(v) => setSleepQuality(v as any)} className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mt-2" aria-label="Calidad del Sueño">
+                    <div>
+                      <RadioGroupItem id="sleep-excellent" value="excellent" className="peer sr-only" />
+                      <Label htmlFor="sleep-excellent" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Excelente
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="sleep-good" value="good" className="peer sr-only" />
+                      <Label htmlFor="sleep-good" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Bueno
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="sleep-fair" value="fair" className="peer sr-only" />
+                      <Label htmlFor="sleep-fair" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Regular
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="sleep-poor" value="poor" className="peer sr-only" />
+                      <Label htmlFor="sleep-poor" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Pobre
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="hrv" className="flex items-center gap-2">Variabilidad Cardíaca (HRV)
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                      </TooltipTrigger>
-                      <TooltipContent>Promedio en ms; mayor HRV suele asociarse a mejor recuperación.</TooltipContent>
-                    </Tooltip>
-                  </Label>
+                  <Label htmlFor="hrv" className="flex items-center gap-2">Variabilidad Cardíaca (HRV) <HelpTip content="Promedio en ms; mayor HRV suele asociarse a mejor recuperación." /></Label>
                   {mode === "form" && (
-                    <Input id="hrv" type="number" placeholder="Ej: 45" min={10} max={150} value={hrv} onChange={(e) => setHrv(e.target.value === "" ? "" : Number(e.target.value))} />
+                    <Input id="hrv" type="number" inputMode="numeric" placeholder="Ej: 45" min={10} max={150} value={hrv} onChange={(e) => setHrv(e.target.value === "" ? "" : Number(e.target.value))} />
                   )}
                   {mode === "sliders" && (
                     <div className="px-1">
@@ -436,16 +375,9 @@ export default function BioAgeCalculatorPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="vo2" className="flex items-center gap-2">VO2 Max Estimado
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                        </TooltipTrigger>
-                        <TooltipContent>ml/kg/min — indicador de fitness cardiorrespiratorio.</TooltipContent>
-                      </Tooltip>
-                    </Label>
+                    <Label htmlFor="vo2" className="flex items-center gap-2">VO2 Max Estimado <HelpTip content="ml/kg/min — indicador de fitness cardiorrespiratorio." /></Label>
                     {mode === "form" && (
-                      <Input id="vo2" type="number" placeholder="Ej: 42" min={15} max={80} value={vo2max} onChange={(e) => setVo2max(e.target.value === "" ? "" : Number(e.target.value))} />
+                      <Input id="vo2" type="number" inputMode="numeric" placeholder="Ej: 42" min={15} max={80} value={vo2max} onChange={(e) => setVo2max(e.target.value === "" ? "" : Number(e.target.value))} />
                     )}
                     {mode === "sliders" && (
                       <div className="px-1">
@@ -458,16 +390,9 @@ export default function BioAgeCalculatorPage() {
                     <p className="text-xs text-[var(--text-muted)]">ml/kg/min - Puedes estimarlo con una prueba de caminata</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="grip" className="flex items-center gap-2">Fuerza de Agarre (kg)
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                        </TooltipTrigger>
-                        <TooltipContent>Indicador funcional asociado a longevidad.</TooltipContent>
-                      </Tooltip>
-                    </Label>
+                    <Label htmlFor="grip" className="flex items-center gap-2">Fuerza de Agarre (kg) <HelpTip content="Indicador funcional asociado a longevidad." /></Label>
                     {mode === "form" && (
-                      <Input id="grip" type="number" placeholder="Ej: 35" min={10} max={100} value={gripStrength} onChange={(e) => setGripStrength(e.target.value === "" ? "" : Number(e.target.value))} />
+                      <Input id="grip" type="number" inputMode="numeric" placeholder="Ej: 35" min={10} max={100} value={gripStrength} onChange={(e) => setGripStrength(e.target.value === "" ? "" : Number(e.target.value))} />
                     )}
                     {mode === "sliders" && (
                       <div className="px-1">
@@ -482,16 +407,9 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="walk" className="flex items-center gap-2">Velocidad de Caminata (m/s)
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                      </TooltipTrigger>
-                      <TooltipContent>Tiempo promedio al caminar 4 m a paso normal.</TooltipContent>
-                    </Tooltip>
-                  </Label>
+                  <Label htmlFor="walk" className="flex items-center gap-2">Velocidad de Caminata (m/s) <HelpTip content="Tiempo promedio al caminar 4 m a paso normal." /></Label>
                   {mode === "form" && (
-                    <Input id="walk" type="number" step="0.1" min={0.5} max={2.5} placeholder="Ej: 1.2" value={walkSpeed} onChange={(e) => setWalkSpeed(e.target.value === "" ? "" : Number(e.target.value))} />
+                    <Input id="walk" type="number" inputMode="decimal" step="0.1" min={0.5} max={2.5} placeholder="Ej: 1.2" value={walkSpeed} onChange={(e) => setWalkSpeed(e.target.value === "" ? "" : Number(e.target.value))} />
                   )}
                   {mode === "sliders" && (
                     <div className="px-1">
@@ -523,56 +441,113 @@ export default function BioAgeCalculatorPage() {
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">Nivel de Actividad Física
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                      </TooltipTrigger>
-                      <TooltipContent>Frecuencia semanal aproximada de ejercicio.</TooltipContent>
-                    </Tooltip>
-                  </Label>
+                  <Label className="flex items-center gap-2">Nivel de Actividad Física <HelpTip content="Frecuencia semanal aproximada de ejercicio." /></Label>
                   <p className="text-xs text-[var(--text-muted)]">Selecciona el nivel que mejor te represente la mayoría de semanas.</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Chip label="Sedentario" active={activityLevel === "sedentary"} onClick={() => setActivityLevel("sedentary")} />
-                    <Chip label="Ligero" active={activityLevel === "light"} onClick={() => setActivityLevel("light")} />
-                    <Chip label="Moderado" active={activityLevel === "moderate"} onClick={() => setActivityLevel("moderate")} />
-                    <Chip label="Activo" active={activityLevel === "active"} onClick={() => setActivityLevel("active")} />
-                    <Chip label="Muy Activo" active={activityLevel === "veryActive"} onClick={() => setActivityLevel("veryActive")} />
-                  </div>
+                  <RadioGroup value={activityLevel} onValueChange={(v) => setActivityLevel(v as any)} className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mt-1" aria-label="Nivel de Actividad Física">
+                    <div>
+                      <RadioGroupItem id="activity-sedentary" value="sedentary" className="peer sr-only" />
+                      <Label htmlFor="activity-sedentary" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Sedentario
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="activity-light" value="light" className="peer sr-only" />
+                      <Label htmlFor="activity-light" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Ligero
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="activity-moderate" value="moderate" className="peer sr-only" />
+                      <Label htmlFor="activity-moderate" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Moderado
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="activity-active" value="active" className="peer sr-only" />
+                      <Label htmlFor="activity-active" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Activo
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="activity-veryActive" value="veryActive" className="peer sr-only" />
+                      <Label htmlFor="activity-veryActive" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Muy Activo
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">Nivel de Estrés Percibido
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                      </TooltipTrigger>
-                      <TooltipContent>Cómo te sientes la mayor parte del tiempo.</TooltipContent>
-                    </Tooltip>
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Chip label="Bajo" active={stressLevel === "low"} onClick={() => setStressLevel("low")} />
-                    <Chip label="Moderado" active={stressLevel === "moderate"} onClick={() => setStressLevel("moderate")} />
-                    <Chip label="Alto" active={stressLevel === "high"} onClick={() => setStressLevel("high")} />
-                    <Chip label="Muy Alto" active={stressLevel === "veryHigh"} onClick={() => setStressLevel("veryHigh")} />
-                  </div>
+                  <Label className="flex items-center gap-2">Nivel de Estrés Percibido <HelpTip content="Cómo te sientes la mayor parte del tiempo." /></Label>
+                  <RadioGroup value={stressLevel} onValueChange={(v) => setStressLevel(v as any)} className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mt-1" aria-label="Nivel de Estrés Percibido">
+                    <div>
+                      <RadioGroupItem id="stress-low" value="low" className="peer sr-only" />
+                      <Label htmlFor="stress-low" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Bajo
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="stress-moderate" value="moderate" className="peer sr-only" />
+                      <Label htmlFor="stress-moderate" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Moderado
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="stress-high" value="high" className="peer sr-only" />
+                      <Label htmlFor="stress-high" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Alto
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="stress-veryHigh" value="veryHigh" className="peer sr-only" />
+                      <Label htmlFor="stress-veryHigh" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Muy Alto
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2">Calidad de la Dieta
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
-                      </TooltipTrigger>
-                      <TooltipContent>Cuánta comida real vs. ultraprocesada consumes.</TooltipContent>
-                    </Tooltip>
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Chip label="Excelente" active={dietQuality === "excellent"} onClick={() => setDietQuality("excellent")} />
-                    <Chip label="Buena" active={dietQuality === "good"} onClick={() => setDietQuality("good")} />
-                    <Chip label="Regular" active={dietQuality === "fair"} onClick={() => setDietQuality("fair")} />
-                    <Chip label="Pobre" active={dietQuality === "poor"} onClick={() => setDietQuality("poor")} />
-                  </div>
+                  <Label className="flex items-center gap-2">Calidad de la Dieta <HelpTip content="Cuánta comida real vs. ultraprocesada consumes." /></Label>
+                  <RadioGroup value={dietQuality} onValueChange={(v) => setDietQuality(v as any)} className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mt-1" aria-label="Calidad de la Dieta">
+                    <div>
+                      <RadioGroupItem id="diet-excellent" value="excellent" className="peer sr-only" />
+                      <Label htmlFor="diet-excellent" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Excelente
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="diet-good" value="good" className="peer sr-only" />
+                      <Label htmlFor="diet-good" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Buena
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="diet-fair" value="fair" className="peer sr-only" />
+                      <Label htmlFor="diet-fair" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Regular
+                      </Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem id="diet-poor" value="poor" className="peer sr-only" />
+                      <Label htmlFor="diet-poor" className="block cursor-pointer rounded-xl border bg-secondary/60 px-4 py-3 pl-8 text-center hover:border-primary/40 transition-colors min-h-[44px] relative peer-focus-visible:ring-ring/50 peer-focus-visible:ring-[3px] peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-white peer-data-[state=checked]:shadow-[0_0_20px_rgba(109,0,255,0.25)] peer-data-[state=checked]:bg-[linear-gradient(135deg,rgba(109,0,255,0.25),rgba(143,51,255,0.25))]">
+                        <Check className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-0 peer-data-[state=checked]:opacity-100 text-[var(--primary)]" aria-hidden="true" />
+                        Pobre
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
@@ -702,7 +677,7 @@ export default function BioAgeCalculatorPage() {
               )}
 
               <div className="grid grid-cols-2 gap-3 mt-10">
-                <Button variant="neon" onClick={() => {
+                <Button variant="neon" size="lg" onClick={() => {
                   // reset
                   setSection(1);
                   setResults(null);
@@ -723,24 +698,11 @@ export default function BioAgeCalculatorPage() {
   )
 }
 
-function Chip({ label, active, onClick }: { label: string; active?: boolean; onClick: () => void }) {
-  return (
-    <Button
-      type="button"
-      variant="neon"
-      size="sm"
-      className={active ? "shadow-[var(--neon-shadow)]" : "opacity-90"}
-      onClick={onClick}
-    >
-      {label}
-    </Button>
-  )
-}
 
 function MetricCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
   return (
     <NeonCard className="p-5">
-      <div className="absolute inset-x-0 top-0 h-0.5 animate-[scan_3s_linear_infinite] bg-[linear-gradient(90deg,transparent,var(--primary),transparent)]" />
+      <div className="absolute inset-x-0 top-0 h-0.5 motion-safe:animate-[scan_3s_linear_infinite] bg-[linear-gradient(90deg,transparent,var(--primary),transparent)]" />
       <div className="mb-3 text-xs uppercase tracking-wider text-[var(--text-muted)]">{title}</div>
       <div className="mb-2 text-3xl font-bold bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-transparent">{value}</div>
       <div className="text-sm text-[var(--text-muted)] flex items-center gap-2">{icon}<span>Estado</span></div>
