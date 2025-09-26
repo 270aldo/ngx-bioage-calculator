@@ -6,15 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { HelpTip } from "@/components/ui/help-tip"
 import { NeonCard } from "@/components/neon-card"
@@ -65,7 +57,6 @@ export default function BioAgeCalculatorPage() {
 
   const isSection1Valid = chronoAge !== "" && height !== "" && weight !== "" && sex !== ""
   const isSection2Valid = sleepHours !== "" && sleepQuality !== ""
-  const isSection3Valid = true // optional fields
   const isSection4Valid = activityLevel !== "" && stressLevel !== "" && dietQuality !== ""
 
   function goTo(next: Section) {
@@ -146,18 +137,6 @@ export default function BioAgeCalculatorPage() {
     return all
   }
 
-  // Presets rápidos (modo "Rápido")
-  function applyPreset(name: "activo" | "sedentario" | "sueno" | "dieta") {
-    if (name === "activo") {
-      setActivityLevel("active"); setVo2max(45); setWalkSpeed(1.3); setGripStrength(35); setSleepHours(7.5); setSleepQuality("good"); setStressLevel("moderate"); setDietQuality("good")
-    } else if (name === "sedentario") {
-      setActivityLevel("sedentary"); setVo2max(28); setWalkSpeed(0.9); setGripStrength(22); setSleepHours(6); setSleepQuality("fair"); setStressLevel("high"); setDietQuality("fair")
-    } else if (name === "sueno") {
-      setSleepHours(8); setSleepQuality("excellent"); setStressLevel("low")
-    } else if (name === "dieta") {
-      setDietQuality("excellent")
-    }
-  }
 
   const ageDiff = useMemo(() => {
     if (!results) return 0
