@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -44,7 +44,7 @@ export default function BioAgeCalculatorPage() {
   const [autoCalc, setAutoCalc] = useState(false)
 
   // Auto-cálculo con debounce
-  React.useEffect(() => {
+  useEffect(() => {
     if (!autoCalc) return
     const requiredOk = chronoAge !== "" && height !== "" && weight !== "" && sex !== "" && sleepHours !== "" && sleepQuality !== "" && activityLevel !== "" && stressLevel !== "" && dietQuality !== ""
     if (!requiredOk) return
