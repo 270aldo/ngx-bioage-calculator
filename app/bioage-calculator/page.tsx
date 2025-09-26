@@ -24,6 +24,7 @@ import { StepperInput } from "@/components/stepper-input"
 import { calculateBioAge, type BioAgeInput, type BioAgeResult } from "@/lib/bioage"
 import { z } from "zod"
 import { Loader2, Sparkles, Activity, HeartPulse, Gauge, Zap } from "lucide-react"
+import { track } from "@vercel/analytics"
 
 const emailSchema = z.string().email()
 
@@ -110,6 +111,11 @@ export default function BioAgeCalculatorPage() {
     setSection(next)
   }
 
+  function onModeChange(v: string) {
+    setMode(v as any)
+    try { track("input_mode_selected", { mode: v }) } catch {}
+  }
+
   function toNumber<T extends number | "">(v: T): number {
     return (v as any) === "" ? 0 : Number(v)
   }
@@ -120,6 +126,7 @@ export default function BioAgeCalculatorPage() {
       return
     }
 
+    try { track("calc_clicked", { auto: autoCalc }) } catch {}
     setLoading(true)
     setTimeout(() => {
       const payload: BioAgeInput = {
@@ -159,6 +166,7 @@ export default function BioAgeCalculatorPage() {
         body: JSON.stringify({ email, source: "bioage-calculator", utm: getUtm() }),
       })
       setUnlocked(true)
+      try { track("lead_unlocked", { source: "bioage-calculator" }) } catch {}
     } catch (e) {
       console.error(e)
       setUnlocked(true) // fallback unlock
@@ -175,6 +183,19 @@ export default function BioAgeCalculatorPage() {
       if (v) all[k] = v
     })
     return all
+  }
+
+  // Presets rápidos (modo "Rápido")
+  function applyPreset(name: "activo" | "sedentario" | "sueno" | "dieta") {
+    if (name === "activo") {
+      setActivityLevel("active"); setVo2max(45); setWalkSpeed(1.3); setGripStrength(35); setSleepHours(7.5); setSleepQuality("good"); setStressLevel("moderate"); setDietQuality("good")
+    } else if (name === "sedentario") {
+      setActivityLevel("sedentary"); setVo2max(28); setWalkSpeed(0.9); setGripStrength(22); setSleepHours(6); setSleepQuality("fair"); setStressLevel("high"); setDietQuality("fair")
+    } else if (name === "sueno") {
+      setSleepHours(8); setSleepQuality("excellent"); setStressLevel("low")
+    } else if (name === "dieta") {
+      setDietQuality("excellent")
+    }
   }
 
   const ageDiff = useMemo(() => {
@@ -199,7 +220,7 @@ export default function BioAgeCalculatorPage() {
 
           {/* Mode + Auto-calc + Progress */}
           <div className="mb-4 flex items-center justify-between gap-3">
-            <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+            <Tabs value={mode} onValueChange={onModeChange}>
               <TabsList>
                 <TabsTrigger value="form">Formulario</TabsTrigger>
                 <TabsTrigger value="sliders">Sliders</TabsTrigger>
@@ -208,7 +229,7 @@ export default function BioAgeCalculatorPage() {
             </Tabs>
             <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
               <span>Auto-calcular</span>
-              <Switch checked={autoCalc} onCheckedChange={setAutoCalc} />
+              <Switch checked={autoCalc} onCheckedChange={(v) => { setAutoCalc(!!v); try { track("calc_auto_toggle", { on: !!v }) } catch {} }} />
             </div>
           </div>
 
@@ -227,6 +248,18 @@ export default function BioAgeCalculatorPage() {
               <p className="text-center text-sm text-[var(--text-muted)] mb-8">Comencemos con algunos datos fundamentales para personalizar tu análisis</p>
 
               <div className="space-y-6">
+                {mode === "quick" && (
+                  <NeonCard className="p-4">
+                    <div className="mb-2 text-sm text-[var(--text-muted)]">Presets rápidos</div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="neon" size="sm" onClick={() => applyPreset("activo")}>Perfil Activo</Button>
+                      <Button variant="neon" size="sm" onClick={() => applyPreset("sedentario")}>Perfil Sedentario</Button>
+                      <Button variant="neon" size="sm" onClick={() => applyPreset("sueno")}>Sueño Óptimo</Button>
+                      <Button variant="neon" size="sm" onClick={() => applyPreset("dieta")}>Dieta Excelente</Button>
+                    </div>
+                  </NeonCard>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="chronoAge">Edad Cronológica</Label>
                   {mode === "form" && (
@@ -328,17 +361,12 @@ export default function BioAgeCalculatorPage() {
 
                 <div className="space-y-2">
                   <Label>Calidad del Sueño</Label>
-                  <Select value={sleepQuality} onValueChange={(v) => setSleepQuality(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una opción" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="excellent">Excelente - Despierto renovado</SelectItem>
-                      <SelectItem value="good">Bueno - Descanso adecuado</SelectItem>
-                      <SelectItem value="fair">Regular - A veces cansado</SelectItem>
-                      <SelectItem value="poor">Pobre - Frecuentemente cansado</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip label="Excelente" active={sleepQuality === "excellent"} onClick={() => setSleepQuality("excellent")} />
+                    <Chip label="Bueno" active={sleepQuality === "good"} onClick={() => setSleepQuality("good")} />
+                    <Chip label="Regular" active={sleepQuality === "fair"} onClick={() => setSleepQuality("fair")} />
+                    <Chip label="Pobre" active={sleepQuality === "poor"} onClick={() => setSleepQuality("poor")} />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -358,7 +386,7 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Button variant="outline" onClick={() => goTo(1)}>
+                  <Button variant="neon" onClick={() => goTo(1)}>
                     Atrás
                   </Button>
                   <Button variant="neon" size="lg" onClick={() => goTo(3)} disabled={!isSection2Valid}>
@@ -425,7 +453,7 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Button variant="outline" onClick={() => goTo(2)}>
+                  <Button variant="neon" onClick={() => goTo(2)}>
                     Atrás
                   </Button>
                   <Button variant="neon" size="lg" onClick={() => goTo(4)}>
@@ -444,52 +472,37 @@ export default function BioAgeCalculatorPage() {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label>Nivel de Actividad Física</Label>
-                  <Select value={activityLevel} onValueChange={(v) => setActivityLevel(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una opción" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sedentary">Sedentario - Menos de 30 min/semana</SelectItem>
-                      <SelectItem value="light">Ligero - 1-2 días/semana</SelectItem>
-                      <SelectItem value="moderate">Moderado - 3-4 días/semana</SelectItem>
-                      <SelectItem value="active">Activo - 5-6 días/semana</SelectItem>
-                      <SelectItem value="veryActive">Muy Activo - Diario</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip label="Sedentario" active={activityLevel === "sedentary"} onClick={() => setActivityLevel("sedentary")} />
+                    <Chip label="Ligero" active={activityLevel === "light"} onClick={() => setActivityLevel("light")} />
+                    <Chip label="Moderado" active={activityLevel === "moderate"} onClick={() => setActivityLevel("moderate")} />
+                    <Chip label="Activo" active={activityLevel === "active"} onClick={() => setActivityLevel("active")} />
+                    <Chip label="Muy Activo" active={activityLevel === "veryActive"} onClick={() => setActivityLevel("veryActive")} />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Nivel de Estrés Percibido</Label>
-                  <Select value={stressLevel} onValueChange={(v) => setStressLevel(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una opción" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Bajo - Relajado la mayor parte del tiempo</SelectItem>
-                      <SelectItem value="moderate">Moderado - Manejable</SelectItem>
-                      <SelectItem value="high">Alto - Frecuentemente estresado</SelectItem>
-                      <SelectItem value="veryHigh">Muy Alto - Estrés crónico</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip label="Bajo" active={stressLevel === "low"} onClick={() => setStressLevel("low")} />
+                    <Chip label="Moderado" active={stressLevel === "moderate"} onClick={() => setStressLevel("moderate")} />
+                    <Chip label="Alto" active={stressLevel === "high"} onClick={() => setStressLevel("high")} />
+                    <Chip label="Muy Alto" active={stressLevel === "veryHigh"} onClick={() => setStressLevel("veryHigh")} />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Calidad de la Dieta</Label>
-                  <Select value={dietQuality} onValueChange={(v) => setDietQuality(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una opción" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="excellent">Excelente - Whole foods, balanceada</SelectItem>
-                      <SelectItem value="good">Buena - Mayormente saludable</SelectItem>
-                      <SelectItem value="fair">Regular - Mixta</SelectItem>
-                      <SelectItem value="poor">Pobre - Mucha comida procesada</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap gap-2">
+                    <Chip label="Excelente" active={dietQuality === "excellent"} onClick={() => setDietQuality("excellent")} />
+                    <Chip label="Buena" active={dietQuality === "good"} onClick={() => setDietQuality("good")} />
+                    <Chip label="Regular" active={dietQuality === "fair"} onClick={() => setDietQuality("fair")} />
+                    <Chip label="Pobre" active={dietQuality === "poor"} onClick={() => setDietQuality("poor")} />
+                  </div>
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Button variant="outline" onClick={() => goTo(3)}>
+                  <Button variant="neon" onClick={() => goTo(3)}>
                     Atrás
                   </Button>
                   <Button variant="neon" size="lg" onClick={onCalculate} disabled={loading || !isSection4Valid}>
@@ -615,7 +628,7 @@ export default function BioAgeCalculatorPage() {
               )}
 
               <div className="grid grid-cols-2 gap-3 mt-10">
-                <Button variant="outline" onClick={() => {
+                <Button variant="neon" onClick={() => {
                   // reset
                   setSection(1);
                   setResults(null);
@@ -626,13 +639,27 @@ export default function BioAgeCalculatorPage() {
                   setVo2max(""); setGripStrength(""); setWalkSpeed("");
                   setActivityLevel(""); setStressLevel(""); setDietQuality("");
                 }}>Nuevo Cálculo</Button>
-                <Button variant="neon" size="lg" onClick={() => alert("🚀 Accediendo a NGX Premium - Tu transformación biológica comienza aquí")}>Acceder a NGX Premium</Button>
+                <Button variant="neon" size="lg" onClick={() => { try { track("premium_cta_click") } catch {}; alert("🚀 Accediendo a NGX Premium - Tu transformación biológica comienza aquí")}}>Acceder a NGX Premium</Button>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function Chip({ label, active, onClick }: { label: string; active?: boolean; onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="neon"
+      size="sm"
+      className={active ? "shadow-[var(--neon-shadow)]" : "opacity-90"}
+      onClick={onClick}
+    >
+      {label}
+    </Button>
   )
 }
 
