@@ -123,3 +123,18 @@
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground; }
 }
+
+/* Neon number pulse + shimmer */
+@keyframes neon-pulse {
+  0% { text-shadow: 0 0 20px rgba(109,0,255,0.25), 0 0 0 rgba(109,0,255,0); }
+  50% { text-shadow: 0 0 40px rgba(109,0,255,0.55), 0 0 20px rgba(109,0,255,0.25); }
+  100% { text-shadow: 0 0 20px rgba(109,0,255,0.25), 0 0 0 rgba(109,0,255,0); }
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 2.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-neon-pulse { animation: none; }
+}

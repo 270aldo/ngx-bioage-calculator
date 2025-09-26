@@ -23,7 +23,7 @@ import { NeonCard } from "@/components/neon-card"
 import { StepperInput } from "@/components/stepper-input"
 import { calculateBioAge, type BioAgeInput, type BioAgeResult } from "@/lib/bioage"
 import { z } from "zod"
-import { Loader2, Sparkles, Activity, HeartPulse, Gauge, Zap } from "lucide-react"
+import { Loader2, Sparkles, Activity, HeartPulse, Gauge, Zap, HelpCircle } from "lucide-react"
 import { track } from "@vercel/analytics"
 
 const emailSchema = z.string().email()
@@ -248,20 +248,16 @@ export default function BioAgeCalculatorPage() {
               <p className="text-center text-sm text-[var(--text-muted)] mb-8">Comencemos con algunos datos fundamentales para personalizar tu análisis</p>
 
               <div className="space-y-6">
-                {mode === "quick" && (
-                  <NeonCard className="p-4">
-                    <div className="mb-2 text-sm text-[var(--text-muted)]">Presets rápidos</div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="neon" size="sm" onClick={() => applyPreset("activo")}>Perfil Activo</Button>
-                      <Button variant="neon" size="sm" onClick={() => applyPreset("sedentario")}>Perfil Sedentario</Button>
-                      <Button variant="neon" size="sm" onClick={() => applyPreset("sueno")}>Sueño Óptimo</Button>
-                      <Button variant="neon" size="sm" onClick={() => applyPreset("dieta")}>Dieta Excelente</Button>
-                    </div>
-                  </NeonCard>
-                )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="chronoAge">Edad Cronológica</Label>
+                  <Label htmlFor="chronoAge" className="flex items-center gap-2">Edad Cronológica
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                      </TooltipTrigger>
+                      <TooltipContent>Tu edad en años cumplidos.</TooltipContent>
+                    </Tooltip>
+                  </Label>
                   {mode === "form" && (
                     <Input id="chronoAge" type="number" placeholder="Ej: 45" min={18} max={100} value={chronoAge} onChange={(e) => setChronoAge(e.target.value === "" ? "" : Number(e.target.value))} />
                   )}
@@ -277,7 +273,14 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Sexo Biológico</Label>
+                  <Label className="flex items-center gap-2">Sexo Biológico
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                      </TooltipTrigger>
+                      <TooltipContent>Usado para ajustar VO2max y fuerza esperada.</TooltipContent>
+                    </Tooltip>
+                  </Label>
                   <RadioGroup value={sex} onValueChange={(v) => setSex(v as any)} className="grid grid-cols-2 gap-3 mt-2">
                     <div>
                       <RadioGroupItem id="male" value="male" className="peer sr-only" />
@@ -296,7 +299,14 @@ export default function BioAgeCalculatorPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="height">Altura (cm)</Label>
+                    <Label htmlFor="height" className="flex items-center gap-2">Altura (cm)
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                        </TooltipTrigger>
+                        <TooltipContent>Usada para calcular el IMC.</TooltipContent>
+                      </Tooltip>
+                    </Label>
                     {mode === "form" && (
                       <Input id="height" type="number" placeholder="Ej: 175" min={140} max={220} value={height} onChange={(e) => setHeight(e.target.value === "" ? "" : Number(e.target.value))} />
                     )}
@@ -310,7 +320,14 @@ export default function BioAgeCalculatorPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="weight">Peso (kg)</Label>
+                    <Label htmlFor="weight" className="flex items-center gap-2">Peso (kg)
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                        </TooltipTrigger>
+                        <TooltipContent>Usado para calcular el IMC.</TooltipContent>
+                      </Tooltip>
+                    </Label>
                     {mode === "form" && (
                       <Input id="weight" type="number" placeholder="Ej: 70" min={40} max={200} value={weight} onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))} />
                     )}
@@ -344,7 +361,14 @@ export default function BioAgeCalculatorPage() {
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="sleepHours">Horas de Sueño Promedio</Label>
+                  <Label htmlFor="sleepHours" className="flex items-center gap-2">Horas de Sueño Promedio
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                      </TooltipTrigger>
+                      <TooltipContent>Promedio de las últimas 4 semanas.</TooltipContent>
+                    </Tooltip>
+                  </Label>
                   {mode === "form" && (
                     <Input id="sleepHours" type="number" step="0.5" min={4} max={12} placeholder="Ej: 7.5" value={sleepHours} onChange={(e) => setSleepHours(e.target.value === "" ? "" : Number(e.target.value))} />
                   )}
@@ -370,7 +394,14 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="hrv">Variabilidad Cardíaca (HRV)</Label>
+                  <Label htmlFor="hrv" className="flex items-center gap-2">Variabilidad Cardíaca (HRV)
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                      </TooltipTrigger>
+                      <TooltipContent>Promedio en ms; mayor HRV suele asociarse a mejor recuperación.</TooltipContent>
+                    </Tooltip>
+                  </Label>
                   {mode === "form" && (
                     <Input id="hrv" type="number" placeholder="Ej: 45" min={10} max={150} value={hrv} onChange={(e) => setHrv(e.target.value === "" ? "" : Number(e.target.value))} />
                   )}
@@ -386,7 +417,7 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Button variant="neon" onClick={() => goTo(1)}>
+                  <Button variant="neon" size="lg" onClick={() => goTo(1)}>
                     Atrás
                   </Button>
                   <Button variant="neon" size="lg" onClick={() => goTo(3)} disabled={!isSection2Valid}>
@@ -405,7 +436,14 @@ export default function BioAgeCalculatorPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="vo2">VO2 Max Estimado</Label>
+                    <Label htmlFor="vo2" className="flex items-center gap-2">VO2 Max Estimado
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                        </TooltipTrigger>
+                        <TooltipContent>ml/kg/min — indicador de fitness cardiorrespiratorio.</TooltipContent>
+                      </Tooltip>
+                    </Label>
                     {mode === "form" && (
                       <Input id="vo2" type="number" placeholder="Ej: 42" min={15} max={80} value={vo2max} onChange={(e) => setVo2max(e.target.value === "" ? "" : Number(e.target.value))} />
                     )}
@@ -420,7 +458,14 @@ export default function BioAgeCalculatorPage() {
                     <p className="text-xs text-[var(--text-muted)]">ml/kg/min - Puedes estimarlo con una prueba de caminata</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="grip">Fuerza de Agarre (kg)</Label>
+                    <Label htmlFor="grip" className="flex items-center gap-2">Fuerza de Agarre (kg)
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                        </TooltipTrigger>
+                        <TooltipContent>Indicador funcional asociado a longevidad.</TooltipContent>
+                      </Tooltip>
+                    </Label>
                     {mode === "form" && (
                       <Input id="grip" type="number" placeholder="Ej: 35" min={10} max={100} value={gripStrength} onChange={(e) => setGripStrength(e.target.value === "" ? "" : Number(e.target.value))} />
                     )}
@@ -437,7 +482,14 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="walk">Velocidad de Caminata (m/s)</Label>
+                  <Label htmlFor="walk" className="flex items-center gap-2">Velocidad de Caminata (m/s)
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                      </TooltipTrigger>
+                      <TooltipContent>Tiempo promedio al caminar 4 m a paso normal.</TooltipContent>
+                    </Tooltip>
+                  </Label>
                   {mode === "form" && (
                     <Input id="walk" type="number" step="0.1" min={0.5} max={2.5} placeholder="Ej: 1.2" value={walkSpeed} onChange={(e) => setWalkSpeed(e.target.value === "" ? "" : Number(e.target.value))} />
                   )}
@@ -453,7 +505,7 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Button variant="neon" onClick={() => goTo(2)}>
+                  <Button variant="neon" size="lg" onClick={() => goTo(2)}>
                     Atrás
                   </Button>
                   <Button variant="neon" size="lg" onClick={() => goTo(4)}>
@@ -471,7 +523,15 @@ export default function BioAgeCalculatorPage() {
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Nivel de Actividad Física</Label>
+                  <Label className="flex items-center gap-2">Nivel de Actividad Física
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                      </TooltipTrigger>
+                      <TooltipContent>Frecuencia semanal aproximada de ejercicio.</TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  <p className="text-xs text-[var(--text-muted)]">Selecciona el nivel que mejor te represente la mayoría de semanas.</p>
                   <div className="flex flex-wrap gap-2">
                     <Chip label="Sedentario" active={activityLevel === "sedentary"} onClick={() => setActivityLevel("sedentary")} />
                     <Chip label="Ligero" active={activityLevel === "light"} onClick={() => setActivityLevel("light")} />
@@ -482,7 +542,14 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Nivel de Estrés Percibido</Label>
+                  <Label className="flex items-center gap-2">Nivel de Estrés Percibido
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                      </TooltipTrigger>
+                      <TooltipContent>Cómo te sientes la mayor parte del tiempo.</TooltipContent>
+                    </Tooltip>
+                  </Label>
                   <div className="flex flex-wrap gap-2">
                     <Chip label="Bajo" active={stressLevel === "low"} onClick={() => setStressLevel("low")} />
                     <Chip label="Moderado" active={stressLevel === "moderate"} onClick={() => setStressLevel("moderate")} />
@@ -492,7 +559,14 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Calidad de la Dieta</Label>
+                  <Label className="flex items-center gap-2">Calidad de la Dieta
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-[var(--primary)]" />
+                      </TooltipTrigger>
+                      <TooltipContent>Cuánta comida real vs. ultraprocesada consumes.</TooltipContent>
+                    </Tooltip>
+                  </Label>
                   <div className="flex flex-wrap gap-2">
                     <Chip label="Excelente" active={dietQuality === "excellent"} onClick={() => setDietQuality("excellent")} />
                     <Chip label="Buena" active={dietQuality === "good"} onClick={() => setDietQuality("good")} />
@@ -502,7 +576,7 @@ export default function BioAgeCalculatorPage() {
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Button variant="neon" onClick={() => goTo(3)}>
+                  <Button variant="neon" size="lg" onClick={() => goTo(3)}>
                     Atrás
                   </Button>
                   <Button variant="neon" size="lg" onClick={onCalculate} disabled={loading || !isSection4Valid}>
@@ -530,7 +604,7 @@ export default function BioAgeCalculatorPage() {
 
               <NeonCard className="p-8 mb-8">
                 <div className="uppercase text-xs tracking-widest text-[var(--text-muted)] mb-2">Tu Edad Biológica Real</div>
-                <div className="text-7xl sm:text-8xl font-extrabold bg-gradient-to-b from-white to-neutral-300 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(255,255,255,0.25)]">
+                <div className="text-7xl sm:text-8xl font-extrabold bg-gradient-to-b from-white to-neutral-300 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(255,255,255,0.25)] animate-neon-pulse">
                   {results.bioAge}
                 </div>
                 <div className="mt-2 text-lg font-medium">
